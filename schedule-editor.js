@@ -94,7 +94,17 @@
 
   window.scheduleEditorEffectiveSlots = function (dayIdx, slots, state) {
     const current = state || (window.storeData || readState());
-    return slots.map(slot => effectiveSlot(dayIdx, slot, current));
+    const dayState = current.days && current.days[dayIdx] || {};
+    const recurringDay = current.recurringSchedule && current.recurringSchedule[dayIdx] || {};
+    const deleted = new Set([...(recurringDay.deleted || []), ...(dayState.deleted || [])]);
+    const result = slots
+      .filter(slot => !deleted.has(slot.id))
+      .map(slot => effectiveSlot(dayIdx, slot, current));
+    const recurringAdded = recurringDay.added || [];
+    const weeklyAdded = dayState.added || [];
+    return result.concat(recurringAdded, weeklyAdded).filter((slot, index, list) =>
+      list.findIndex(item => item.id === slot.id) === index
+    );
   };
 
   function ensureStyles() {
@@ -106,12 +116,16 @@
       .schedule-editor-btn{border:0;border-radius:10px;background:#1e3a8a;color:#fff;padding:10px 16px;font-weight:800;cursor:pointer}
       .schedule-editor-panel{background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:14px;margin-bottom:18px}
       .schedule-editor-panel h2{font-size:16px;margin-bottom:12px}
-      .schedule-editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
-      .schedule-editor-day{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px}
-      .schedule-editor-day h3{font-size:14px;margin-bottom:7px}
-      .schedule-editor-item{font-size:12px;padding:7px 0;border-top:1px solid #f1f5f9}
+      .schedule-editor-grid{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:8px;margin-bottom:14px}
+      .schedule-editor-day{background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:10px;cursor:pointer;text-align:center;font-weight:800}
+      .schedule-editor-day.selected{background:#1e3a8a;color:#fff;border-color:#1e3a8a}
+      .schedule-editor-item{font-size:12px;padding:9px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px;align-items:center}
       .schedule-editor-item strong{display:block}
-      .schedule-editor-item span{color:#64748b}
+      .schedule-editor-item span{color:#64748b;display:block}
+      .schedule-editor-item-actions{display:flex;gap:4px;flex-shrink:0}
+      .schedule-editor-item-actions button{border:0;border-radius:6px;padding:5px 7px;cursor:pointer;font-weight:800}
+      .schedule-editor-edit{background:#e0e7ff;color:#3730a3}.schedule-editor-delete{background:#fee2e2;color:#991b1b}
+      .schedule-editor-add{border:1px dashed #64748b;background:#fff;color:#1e3a8a;border-radius:8px;padding:9px;width:100%;font-weight:800;cursor:pointer}
       .schedule-editor-modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
       .schedule-editor-modal.open{display:flex}
       .schedule-editor-dialog{background:#fff;border-radius:16px;width:min(620px,100%);max-height:92vh;overflow:auto;padding:20px;direction:rtl}
@@ -123,6 +137,7 @@
       .schedule-editor-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:16px}
       .schedule-editor-actions button{border:0;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
       .schedule-editor-save{background:#1e3a8a;color:#fff}.schedule-editor-cancel{background:#e2e8f0;color:#0f172a}
+      @media(max-width:600px){.schedule-editor-grid{grid-template-columns:repeat(3,1fr)}}
     `;
     document.head.appendChild(style);
   }
@@ -136,14 +151,32 @@
     }));
   }
 
-  function renderPanel(panel) {
+  function renderPanel(panel, selectedDayIdx) {
     const schedule = effectiveScheduleFromPage();
     if (!schedule) return;
-    panel.innerHTML = `<h2>📝 המערכת המעודכנת</h2><div class="schedule-editor-grid">${
-      schedule.map(day => `<section class="schedule-editor-day"><h3>יום ${day.name}</h3>${
-        day.slots.map(slot => `<div class="schedule-editor-item"><strong>${escapeHtml(slot.time)} · ${escapeHtml(slot.title)}</strong><span>${escapeHtml(slot.sub)} · ${escapeHtml(TYPE_NAMES[slot.type] || slot.type)}</span></div>`).join("")
-      }</section>`).join("")
-    }</div>`;
+    const day = schedule[selectedDayIdx];
+    panel.innerHTML = `<h2>🗓️ יומן המערכת</h2>
+      <div class="schedule-editor-grid">${schedule.map((item, index) =>
+        `<button type="button" class="schedule-editor-day ${index === selectedDayIdx ? "selected" : ""}" data-day="${index}">יום ${item.name}<br><small>${item.slots.length} אירועים</small></button>`
+      ).join("")}</div>
+      <div class="schedule-editor-day-list">${day.slots.map(slot =>
+        `<div class="schedule-editor-item"><div><strong>${escapeHtml(slot.time)} · ${escapeHtml(slot.title)}</strong><span>${escapeHtml(slot.sub)} · ${escapeHtml(TYPE_NAMES[slot.type] || slot.type)}</span></div><div class="schedule-editor-item-actions"><button type="button" class="schedule-editor-edit" data-edit="${selectedDayIdx}:${escapeHtml(slot.id)}">ערוך</button><button type="button" class="schedule-editor-delete" data-delete="${selectedDayIdx}:${escapeHtml(slot.id)}">מחק</button></div></div>`
+      ).join("")}</div>
+      <button type="button" class="schedule-editor-add" data-add="${selectedDayIdx}">＋ הוסף אירוע ליום ${day.name}</button>`;
+
+    panel.querySelectorAll("[data-day]").forEach(button => {
+      button.onclick = () => renderPanel(panel, Number(button.dataset.day));
+    });
+    panel.querySelector("[data-add]").onclick = () => openEditor(Number(panel.querySelector("[data-add]").dataset.add));
+    panel.querySelectorAll("[data-edit]").forEach(button => {
+      const [dayIdx, slotId] = button.dataset.edit.split(":");
+      const slot = schedule[Number(dayIdx)].slots.find(item => item.id === slotId);
+      button.onclick = () => openEditor(Number(dayIdx), slot);
+    });
+    panel.querySelectorAll("[data-delete]").forEach(button => {
+      const [dayIdx, slotId] = button.dataset.delete.split(":");
+      button.onclick = () => deleteEvent(Number(dayIdx), slotId);
+    });
   }
 
   function escapeHtml(value) {
@@ -154,14 +187,15 @@
 
   function openEditor(dayIdx, slot) {
     const state = readState();
-    const current = effectiveSlot(dayIdx, slot, state);
+    const current = slot || { id: "", title: "", sub: "", time: "", type: "school" };
     const modal = document.getElementById("schedule-editor-modal");
     modal.querySelector("[name=day]").value = dayIdx;
-    modal.querySelector("[name=slot]").value = slot.id;
+    modal.querySelector("[name=slot]").value = current.id;
     modal.querySelector("[name=title]").value = current.title;
     modal.querySelector("[name=sub]").value = current.sub;
     modal.querySelector("[name=time]").value = current.time;
     modal.querySelector("[name=type]").value = current.type;
+    modal.querySelector("button[name=delete]").style.display = current.id ? "inline-block" : "none";
     modal.querySelectorAll("[name=scope]").forEach(input => {
       input.checked = input.value === "week";
     });
@@ -176,7 +210,7 @@
     modal.innerHTML = `
       <form class="schedule-editor-dialog">
         <h2>✏️ עריכת אירוע במערכת הגדולה</h2>
-        <input type="hidden" name="day"><input type="hidden" name="slot">
+        <input type="hidden" name="day"><input type="hidden" name="slot"><input type="hidden" name="delete">
         <label class="schedule-editor-field">כותרת<input name="title" required></label>
         <label class="schedule-editor-field">תיאור<input name="sub"></label>
         <label class="schedule-editor-field">שעות (לדוגמה 08:00 - 09:30)<input name="time" required pattern="^\\d{2}:\\d{2} - \\d{2}:\\d{2}$"></label>
@@ -189,11 +223,16 @@
         </div>
         <div class="schedule-editor-actions">
           <button type="submit" class="schedule-editor-save">שמור וסנכרן</button>
+          <button type="button" class="schedule-editor-delete" name="delete">מחק אירוע</button>
           <button type="button" class="schedule-editor-cancel">ביטול</button>
         </div>
       </form>`;
     document.body.appendChild(modal);
     modal.querySelector(".schedule-editor-cancel").onclick = () => modal.classList.remove("open");
+    modal.querySelector("button[name=delete]").onclick = () => {
+      deleteEvent(Number(modal.querySelector("[name=day]").value), modal.querySelector("[name=slot]").value);
+      modal.classList.remove("open");
+    };
     modal.onclick = event => {
       if (event.target === modal) modal.classList.remove("open");
     };
@@ -202,18 +241,31 @@
       const form = event.currentTarget;
       const state = readState();
       const dayIdx = Number(form.day.value);
-      const slotId = form.slot.value;
-      const target = form.scope.value === "recurring"
+      const slotId = form.slot.value || "custom-" + Date.now();
+      const isRecurring = form.scope.value === "recurring";
+      const dayState = state.days[dayIdx] || (state.days[dayIdx] = {});
+      const target = isRecurring
         ? (state.recurringSchedule || (state.recurringSchedule = {}))
-        : (state.days[dayIdx] || (state.days[dayIdx] = {})).slotOverrides || (state.days[dayIdx].slotOverrides = {});
-      if (form.scope.value === "recurring" && !target[dayIdx]) target[dayIdx] = {};
-      const bucket = form.scope.value === "recurring" ? target[dayIdx] : target;
-      bucket[slotId] = {
+        : dayState;
+      if (isRecurring && !target[dayIdx]) target[dayIdx] = {};
+      const bucket = isRecurring ? target[dayIdx] : target;
+      const savedEvent = {
+        id: slotId,
         title: form.title.value.trim(),
         sub: form.sub.value.trim(),
         time: form.time.value.trim(),
         type: form.type.value
       };
+      const source = window.baseSchedule || DEFAULT_SCHEDULE;
+      const isNew = !source[dayIdx].slots.some(slot => slot.id === slotId);
+      const overrideBucket = isRecurring ? bucket : (dayState.slotOverrides || (dayState.slotOverrides = {}));
+      if (isNew) {
+        const added = bucket.added || (bucket.added = []);
+        const index = added.findIndex(item => item.id === slotId);
+        if (index >= 0) added[index] = savedEvent; else added.push(savedEvent);
+      } else {
+        overrideBucket[slotId] = savedEvent;
+      }
       state.updatedAt = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       fetch(NTFY_URL, {
@@ -223,6 +275,30 @@
       modal.classList.remove("open");
       window.location.reload();
     };
+  }
+
+  function deleteEvent(dayIdx, slotId) {
+    if (!slotId) return;
+    const state = readState();
+    const dayState = state.days[dayIdx] || (state.days[dayIdx] = {});
+    const source = window.baseSchedule || DEFAULT_SCHEDULE;
+    const isBase = source[dayIdx].slots.some(slot => slot.id === slotId);
+    const isRecurring = document.querySelector("[name=scope]:checked")?.value === "recurring";
+    const target = isRecurring
+      ? (state.recurringSchedule || (state.recurringSchedule = {}))
+      : dayState;
+    if (isRecurring && !target[dayIdx]) target[dayIdx] = {};
+    const bucket = isRecurring ? target[dayIdx] : target;
+    if (bucket.added) bucket.added = bucket.added.filter(slot => slot.id !== slotId);
+    if (bucket.slotOverrides) delete bucket.slotOverrides[slotId];
+    if (isBase) {
+      bucket.deleted = [...new Set([...(bucket.deleted || []), slotId])];
+    }
+    state.updatedAt = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    fetch(NTFY_URL, { method: "POST", body: JSON.stringify(state) })
+      .catch(error => console.error("Failed to sync deleted event", error));
+    window.location.reload();
   }
 
   function setupWeeklyPage() {
@@ -238,28 +314,11 @@
     const panel = document.createElement("section");
     panel.className = "schedule-editor-panel";
     table.parentNode.insertBefore(panel, table);
-    renderPanel(panel);
+    renderPanel(panel, 0);
 
     const button = toolbar.querySelector("button");
     button.onclick = () => {
-      const schedule = effectiveScheduleFromPage();
-      const modal = document.getElementById("schedule-editor-modal");
-      const dialog = modal.querySelector("form");
-      const picker = document.createElement("div");
-      picker.className = "schedule-editor-choice";
-      picker.innerHTML = schedule.map((day, dayIdx) => day.slots.map(slot =>
-        `<button type="button" data-day="${dayIdx}" data-slot="${slot.id}" style="border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:8px;cursor:pointer">${day.name}: ${escapeHtml(slot.title)}</button>`
-      ).join("")).join("");
-      dialog.querySelector(".schedule-editor-picker")?.remove();
-      picker.classList.add("schedule-editor-picker");
-      dialog.insertBefore(picker, dialog.querySelector(".schedule-editor-field"));
-      picker.querySelectorAll("button").forEach(item => item.onclick = () => {
-        const dayIdx = Number(item.dataset.day);
-        const source = window.baseSchedule || DEFAULT_SCHEDULE;
-        const slot = source[dayIdx].slots.find(value => value.id === item.dataset.slot);
-        openEditor(dayIdx, slot);
-      });
-      modal.classList.add("open");
+      document.querySelector(".schedule-editor-panel")?.scrollIntoView({ behavior: "smooth" });
     };
 
     try {
