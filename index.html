@@ -679,10 +679,9 @@
 
 <div class="toast" id="toast-msg">השינויים נשמרו וסונכרנו בהצלחה!</div>
 
-<script src="schedule-editor.js?v=3"></script>
 <script>
 // Base schedule structure
-let baseSchedule = {
+const baseSchedule = {
   0: { // ראשון
     name: "ראשון",
     dep: "07:30",
@@ -761,8 +760,7 @@ let hasUnsavedEdits = false;
 // Storage state
 let storeData = {
   currentWeekId: getWeekIdentifier(new Date()),
-  days: {},
-  recurringSchedule: {}
+  days: {}
 };
 
 // Helper: Calculate ISO Week Identifier to automatically reset every Sunday
@@ -787,11 +785,7 @@ function initStorage() {
         storeData = parsed;
       } else {
         console.log("New week detected! Overrides reset to default.");
-        storeData = {
-          currentWeekId: thisWeek,
-          days: {},
-          recurringSchedule: parsed.recurringSchedule || {}
-        };
+        storeData = { currentWeekId: thisWeek, days: {} };
         saveToLocalStorage();
       }
     } catch(e) {
@@ -1003,9 +997,7 @@ function getDayData(dayIdx) {
   const base = baseSchedule[dayIdx];
   const override = (storeData.days && storeData.days[dayIdx]) || {};
   const cancelled = override.cancelled || [];
-  const slots = scheduleEditorEffectiveSlots(dayIdx, base.slots, storeData);
-  const effectiveBase = Object.assign({}, base, { slots });
-  const auto = calcDayEdges(effectiveBase, cancelled);
+  const auto = calcDayEdges(base, cancelled);
   const defSand = getDefaultSandwiches(dayIdx);
   return {
     name: base.name,
@@ -1019,7 +1011,7 @@ function getDayData(dayIdx) {
     sandwiches: override.sandwiches !== undefined ? override.sandwiches : defSand.count,
     sandNotes: override.sandNotes !== undefined ? override.sandNotes : defSand.notes,
     cancelled: cancelled,
-    slots
+    slots: base.slots
   };
 }
 
