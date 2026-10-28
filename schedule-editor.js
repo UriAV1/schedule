@@ -137,6 +137,14 @@
       .schedule-editor-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:16px}
       .schedule-editor-actions button{border:0;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
       .schedule-editor-save{background:#1e3a8a;color:#fff}.schedule-editor-cancel{background:#e2e8f0;color:#0f172a}
+      .schedule-editor-live-table{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;padding:8px;background:#f8fafc}
+      .schedule-editor-live-day{background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px;min-height:180px}
+      .schedule-editor-live-day h3{margin:0 0 8px;text-align:center;font-size:14px}
+      .schedule-editor-live-event{border-radius:8px;padding:8px;margin-bottom:7px;border:1px solid #cbd5e1;background:#eef2ff}
+      .schedule-editor-live-event-time{font-size:11px;font-weight:800;direction:ltr;display:block}
+      .schedule-editor-live-event-title{font-size:12px;font-weight:800;display:block;margin-top:3px}
+      .schedule-editor-live-event-sub{font-size:10px;color:#475569;display:block;margin-top:3px}
+      @media(max-width:800px){.schedule-editor-live-table{grid-template-columns:1fr;}}
       @media(max-width:600px){.schedule-editor-grid{grid-template-columns:repeat(3,1fr)}}
     `;
     document.head.appendChild(style);
@@ -177,6 +185,25 @@
       const [dayIdx, slotId] = button.dataset.delete.split(":");
       button.onclick = () => deleteEvent(Number(dayIdx), slotId);
     });
+  }
+
+  function renderLiveTable(wrapper) {
+    const schedule = effectiveScheduleFromPage();
+    const liveTable = document.createElement("div");
+    liveTable.className = "schedule-editor-live-table";
+    liveTable.innerHTML = schedule.map(day => `
+      <section class="schedule-editor-live-day">
+        <h3>יום ${day.name}</h3>
+        ${day.slots.map(slot => `
+          <article class="schedule-editor-live-event">
+            <span class="schedule-editor-live-event-time">${escapeHtml(slot.time)}</span>
+            <span class="schedule-editor-live-event-title">${escapeHtml(slot.title)}</span>
+            <span class="schedule-editor-live-event-sub">${escapeHtml(slot.sub)}</span>
+          </article>
+        `).join("")}
+      </section>
+    `).join("");
+    wrapper.replaceChildren(liveTable);
   }
 
   function escapeHtml(value) {
@@ -315,6 +342,7 @@
     panel.className = "schedule-editor-panel";
     table.parentNode.insertBefore(panel, table);
     renderPanel(panel, 0);
+    renderLiveTable(table);
 
     const button = toolbar.querySelector("button");
     button.onclick = () => {
@@ -329,7 +357,8 @@
           if (message.currentWeekId === weekId(new Date()) &&
               message.updatedAt > (readState().updatedAt || 0)) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(message));
-            window.location.reload();
+            renderPanel(panel, 0);
+            renderLiveTable(table);
           }
         } catch (error) {
           console.error("Failed to apply schedule update", error);
