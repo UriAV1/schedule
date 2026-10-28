@@ -679,9 +679,10 @@
 
 <div class="toast" id="toast-msg">השינויים נשמרו וסונכרנו בהצלחה!</div>
 
+<script src="../schedule-editor.js"></script>
 <script>
 // Base schedule structure
-const baseSchedule = {
+let baseSchedule = {
   0: { // ראשון
     name: "ראשון",
     dep: "07:30",
@@ -760,7 +761,8 @@ let hasUnsavedEdits = false;
 // Storage state
 let storeData = {
   currentWeekId: getWeekIdentifier(new Date()),
-  days: {}
+  days: {},
+  recurringSchedule: {}
 };
 
 // Helper: Calculate ISO Week Identifier to automatically reset every Sunday
@@ -785,7 +787,11 @@ function initStorage() {
         storeData = parsed;
       } else {
         console.log("New week detected! Overrides reset to default.");
-        storeData = { currentWeekId: thisWeek, days: {} };
+        storeData = {
+          currentWeekId: thisWeek,
+          days: {},
+          recurringSchedule: parsed.recurringSchedule || {}
+        };
         saveToLocalStorage();
       }
     } catch(e) {
@@ -1011,7 +1017,7 @@ function getDayData(dayIdx) {
     sandwiches: override.sandwiches !== undefined ? override.sandwiches : defSand.count,
     sandNotes: override.sandNotes !== undefined ? override.sandNotes : defSand.notes,
     cancelled: cancelled,
-    slots: base.slots
+    slots: scheduleEditorEffectiveSlots(dayIdx, base.slots, storeData)
   };
 }
 
