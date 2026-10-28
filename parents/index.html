@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>לוח שעות יומי & להורים | י"א 7 ואקדמיה</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --travel: #d97706;
+      --travel-light: #fffbeb;
+      --scouts: #15803d;
+      --scouts-light: #f0fdf4;
+      --border: #e2e8f0;
+      --pink: #db2777;
+      --pink-light: #fdf2f8;
+      --amber: #b45309;
+      --amber-light: #fef3c7;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --danger-border: #fca5a5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans Hebrew', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* Top Navigation Tabs */
+    .top-nav {
+      display: flex;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      gap: 6px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    }
+
+    .nav-btn.parents-active {
+      background: var(--pink);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(219, 39, 119, 0.3);
+    }
+
+    /* Sync Indicator */
+    .sync-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+    }
+
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    /* Views */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* Mom View Styling */
+    .parents-header {
+      background: linear-gradient(135deg, #fdf2f8 0%, #fff1f2 100%);
+      border: 2px solid #fbcfe8;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(219, 39, 119, 0.06);
+    }
+
+    .parents-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #9d174d;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .parents-subtitle {
+      color: #831843;
+      font-size: 13.5px;
+      margin-top: 4px;
+    }
+
+    /* Day Selector Pills */
+    .day-selector {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+
+    .day-pill {
+      flex: 1;
+      min-width: 68px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .day-pill.selected {
+      background: #1e293b;
+      color: #ffffff;
+      border-color: #1e293b;
+    }
+
+    .day-pill.today-badge::after {
+      content: "היום";
+      display: block;
+      font-size: 10px;
+      color: #10b981;
+      font-weight: 800;
+    }
+
+    .day-pill.selected.today-badge::after {
+      color: #6ee7b7;
+    }
+
+    /* Quick Info Cards for Mom */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .quick-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .quick-icon {
+      font-size: 26px;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .quick-info h4 {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .quick-info p {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    /* Sandwich Card */
+    .sandwich-card {
+      background: #fefce8;
+      border: 2px solid #facc15;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .sandwich-badge {
+      background: #ca8a04;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sandwich-details h4 {
+      font-size: 14px;
+      color: #713f12;
+      font-weight: 800;
+    }
+
+    .sandwich-details p {
+      font-size: 13px;
+      color: #854d0e;
+      margin-top: 3px;
+      font-weight: 600;
+    }
+
+    /* Timeline */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .time-slot {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    /* CANCELLED LESSON STYLING - DIRECTLY ON THE CARD */
+    .time-slot.is-cancelled {
+      background: #fef2f2 !important;
+      border: 1.5px solid #fca5a5 !important;
+    }
+
+    .time-slot.is-cancelled .slot-title {
+      text-decoration: line-through;
+      color: #991b1b !important;
+      opacity: 0.7;
+    }
+
+    .time-slot.is-cancelled .slot-sub {
+      color: #b91c1c !important;
+      opacity: 0.6;
+    }
+
+    .cancelled-stamp {
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-right: 8px;
+      vertical-align: middle;
+      box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+    }
+
+    .slot-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slot-time-pill {
+      font-size: 11px;
+      font-weight: 800;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 6px;
+      direction: ltr;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .slot-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .slot-sub {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .slot-badge-type {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .badge-uni { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+    .badge-travel { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-scouts { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-school { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+
+    /* Edit View Styling */
+    .edit-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .edit-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .counter-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-counter {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .counter-val {
+      font-size: 18px;
+      font-weight: 900;
+      min-width: 30px;
+      text-align: center;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--text);
+      background: #f8fafc;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .btn-save {
+      background: var(--primary);
+      color: #fff;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      font-size: 15px;
+      margin-top: 10px;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-whatsapp {
+      background: #25d366;
+      color: #fff;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      font-size: 15px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 10px rgba(37, 211, 102, 0.25);
+    }
+
+    .btn-reset-week {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    /* Edit slot list item */
+    .edit-slot-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .btn-toggle-cancel {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-toggle-cancel.cancelled-state {
+      background: #fee2e2;
+      border-color: #f87171;
+      color: #b91c1c;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-size: 13.5px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Top Navigation -->
+  <div class="top-nav">
+    <button class="nav-btn parents-active" id="btn-tab-parents" onclick="switchTab('parents')">❤️ עמוד להורים (/parents)</button>
+    <button class="nav-btn" id="btn-tab-edit" onclick="switchTab('edit')">✏️ עדכון לו"ז וכריכים (/editday)</button>
+    <button class="nav-btn" id="btn-tab-schedule" onclick="window.open('weekly_schedule.html', '_blank')">📅 מערכת מלאה</button>
+  </div>
+
+  <!-- Sync status bar -->
+  <div class="sync-bar">
+    <div class="sync-status">
+      <span class="sync-dot"></span>
+      <span id="sync-label">מסונכרן לענן בזמן אמת</span>
+    </div>
+    <div style="font-size:11.5px; color:#64748b;" id="sync-time">איפוס שבועי אוטומטי פעיל ✓</div>
+  </div>
+
+  <!-- MOM VIEW -->
+  <div id="view-parents" class="view-section active">
+    
+    <div class="parents-header">
+      <div class="parents-title">❤️ הלו"ז היומי של אורי</div>
+      <div class="parents-subtitle" id="parents-date-str">מתעדכן ישירות מהטלפון של אורי • שעות יציאה, חזרה וכריכים</div>
+    </div>
+
+    <!-- Day Selector -->
+    <div class="day-selector" id="parents-day-selector">
+      <div class="day-pill" onclick="selectDay(0)">ראשון</div>
+      <div class="day-pill" onclick="selectDay(1)">שני</div>
+      <div class="day-pill" onclick="selectDay(2)">שלישי</div>
+      <div class="day-pill" onclick="selectDay(3)">רביעי</div>
+      <div class="day-pill" onclick="selectDay(4)">חמישי</div>
+    </div>
+
+    <!-- Sandwich Card -->
+    <div class="sandwich-card">
+      <div class="sandwich-badge" id="parents-sandwich-count">2</div>
+      <div class="sandwich-details">
+        <h4>🥪 כריכים ואוכל מבוקש:</h4>
+        <p id="parents-sandwich-notes">2 כריכי בוקר + כריך צהריים</p>
+      </div>
+    </div>
+
+    <!-- Quick Info Cards -->
+    <div class="quick-grid">
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#e0f2fe; color:#0369a1;">⏰</div>
+        <div class="quick-info">
+          <h4>יציאה מהבית</h4>
+          <p id="parents-departure-time">08:00</p>
+        </div>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon" style="background:#f3e8ff; color:#7e22ce;">🏠</div>
+        <div class="quick-info">
+          <h4>חזרה צפויה הביתה</h4>
+          <p id="parents-return-time">21:00</p>
+        </div>
+      </div>
+    </div>
+    <div id="parents-edges-note" style="display:none; background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; font-size:13px; font-weight:700; padding:10px 14px; border-radius:12px; margin:-6px 0 16px;"></div>
+
+    <!-- Timeline of the day -->
+    <h3 style="font-size:15px; font-weight:800; margin-bottom:12px; color:#1e293b;">📋 סדר היום המעודכן:</h3>
+    <div class="timeline" id="parents-timeline">
+      <!-- Injected via JS -->
+    </div>
+
+  </div>
+
+  <!-- EDIT VIEW -->
+  <div id="view-edit" class="view-section">
+    
+    <div class="edit-card">
+      <div class="edit-title">✏️ עדכון לו"ז יומי ובקשת כריכים</div>
+      <p style="font-size:12.5px; color:var(--muted); margin-bottom:16px;">
+        כל שינוי שתשמור כאן מתעדכן ישירות בענן ומופיע מיד בעמוד של ההורים!
+      </p>
+
+      <!-- Day selector in edit mode -->
+      <div class="form-group">
+        <label>בחר יום לעדכון:</label>
+        <div class="day-selector" id="edit-day-selector">
+          <div class="day-pill" onclick="selectDay(0)">ראשון</div>
+          <div class="day-pill" onclick="selectDay(1)">שני</div>
+          <div class="day-pill" onclick="selectDay(2)">שלישי</div>
+          <div class="day-pill" onclick="selectDay(3)">רביעי</div>
+          <div class="day-pill" onclick="selectDay(4)">חמישי</div>
+        </div>
+      </div>
+
+      <!-- Sandwich Counter -->
+      <div class="form-group">
+        <label>כמות כריכים להיום:</label>
+        <div class="counter-control">
+          <button class="btn-counter" onclick="changeSandwich(-1)">-</button>
+          <span class="counter-val" id="edit-sandwich-count">2</span>
+          <button class="btn-counter" onclick="changeSandwich(1)">+</button>
+          <span style="font-size:13px; color:var(--muted); font-weight:600;">כריכים</span>
+        </div>
+      </div>
+
+      <!-- Sandwich Notes -->
+      <div class="form-group">
+        <label>פירוט כריכים והעדפות:</label>
+        <input type="text" id="edit-sandwich-notes" placeholder="למשל: 1 חביתה, 1 גבינה צהובה, תפוח ומשהו מתוק">
+      </div>
+
+      <!-- Custom Departure and Return Times -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+        <div class="form-group">
+          <label>שעת יציאה מהבית (מחושב אוטומטית):</label>
+          <input type="text" id="edit-dep-time" placeholder="למשל 08:30">
+        </div>
+        <div class="form-group">
+          <label>שעת חזרה הביתה (מחושב אוטומטית):</label>
+          <input type="text" id="edit-ret-time" placeholder="למשל 20:30">
+        </div>
+      </div>
+
+      <!-- Lesson cancellations -->
+      <div class="form-group">
+        <label>שיעורי היום (לחץ לסימון ביטול – יופיע ישירות על השיעור אצל ההורים):</label>
+        <div id="edit-slots-list">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Save & WhatsApp Share -->
+      <button class="btn-save" onclick="saveDayChanges()">💾 שמור וסנכרן לטלפון של ההורים</button>
+      <a class="btn-whatsapp" id="btn-share-whatsapp" href="#" target="_blank">
+        📲 שלח עדכון מהיר להורים בוואטסאפ
+      </a>
+
+      <!-- Reset button -->
+      <button class="btn-reset-week" onclick="resetToDefault()">🔄 אפס יום זה למערכת המקורית</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast-msg">השינויים נשמרו וסונכרנו בהצלחה!</div>
+
+<script>
+// Base schedule structure
+const baseSchedule = {
+  0: { // ראשון
+    name: "ראשון",
+    dep: "07:30",
+    ret: "21:00",
+    slots: [
+      { id: "s1", time: "08:00 - 10:30", title: "פיזיקה D (5 יח״ל)", sub: "מעבדה 1 (3 שיעורים רצופים)", type: "school" },
+      { id: "s2", time: "10:30 - 11:15", title: "חינוך גופני", sub: "אינשטט גל", type: "school" },
+      { id: "s3", time: "11:30 - 12:15", title: "ספרות", sub: "בנג'ו רות • סיום בי״ס ב-12:15", type: "school" },
+      { id: "s4", time: "12:15 - 13:30", title: "🍱 ארוחת צהריים והתארגנות", sub: "מנוחה לפני נסיעה", type: "free" },
+      { id: "s5", time: "13:30 - 15:00", title: "🚗 נסיעה לאוניברסיטה", sub: "שעה וחצי נסיעה", type: "travel", needs: [["s6"]] },
+      { id: "s6", time: "15:00 - 19:30", title: "🎓 אוניברסיטה (פרונטלי)", sub: "סשן אקדמי מלא (4.5 שעות)", type: "uni" },
+      { id: "s7", time: "19:30 - 21:00", title: "🚗 נסיעה חזרה הביתה", sub: "הגעה הביתה ב-21:00", type: "travel", needs: [["s6"]] }
+    ]
+  },
+  1: { // שני
+    name: "שני",
+    dep: "08:30",
+    ret: "20:30",
+    slots: [
+      { id: "m1", time: "08:30 - 10:00", title: "🚗 נסיעה לאוניברסיטה (בוקר)", sub: "יציאה ב-08:30 (גובר על אנגלית אסינכרונית)", type: "travel", needs: [["m2"]] },
+      { id: "m2", time: "10:00 - 12:00", title: "🎓 אוניברסיטה (סבב בוקר)", sub: "לימודים פרונטליים", type: "uni" },
+      { id: "m3", time: "12:00 - 13:30", title: "🚗 נסיעה מאוניברסיטה לבי״ס", sub: "הגעה מדויקת ב-13:30 לשיעור אזרחות", type: "travel", needs: [["m2"], ["m4", "m5", "m6"]] },
+      { id: "m4", time: "13:30 - 14:10", title: "אזרחות", sub: "לופו-שפיר קרן", type: "school" },
+      { id: "m5", time: "14:10 - 14:55", title: "היסטוריה (2 יח״ל)", sub: "גוסקין ברוך | חדר יא 7", type: "school" },
+      { id: "m6", time: "15:05 - 15:30", title: "לשון", sub: "דלית גלי • יציאה ב-15:30 לאקדמיה", type: "school" },
+      { id: "m7", time: "15:30 - 17:00", title: "🚗 נסיעה לאוניברסיטה (ערב)", sub: "יציאה ב-15:30 (גובר על פיזיקה)", type: "travel", needs: [["m8"]] },
+      { id: "m8", time: "17:00 - 19:00", title: "🎓 אוניברסיטה (סבב ערב)", sub: "לימודים פרונטליים", type: "uni" },
+      { id: "m9", time: "19:00 - 20:30", title: "🚗 נסיעה חזרה הביתה", sub: "הגעה הביתה ב-20:30", type: "travel", needs: [["m8"]] }
+    ]
+  },
+  2: { // שלישי
+    name: "שלישי",
+    dep: "07:30",
+    ret: "21:00",
+    slots: [
+      { id: "t1", time: "08:00 - 09:30", title: "לשון (2 יח״ל)", sub: "דלית גלי (2 שיעורים ברצף)", type: "school" },
+      { id: "t2", time: "09:45 - 10:30", title: "אזרחות", sub: "לופו-שפיר קרן", type: "school" },
+      { id: "t3", time: "10:30 - 12:15", title: "☕ חלון פנוי בביה״ס", sub: "שעתיים מנוחה/לימוד", type: "free" },
+      { id: "t4", time: "12:15 - 14:10", title: "אנגלית 5 יח״ל", sub: "דרי צוק רוית", type: "school" },
+      { id: "t5", time: "14:10 - 14:55", title: "חינוך", sub: "אברהם רון • סיום בי״ס ב-14:55!", type: "school" },
+      { id: "t6", time: "14:55 - 16:30", title: "☕ מנוחה והתארגנות לצופים", sub: "שעה וחצי בבית לארוחה והכנה", type: "free" },
+      { id: "t7", time: "16:30 - 20:30", title: "⚜️ פעילות בצופים", sub: "פעילות שבועית מלאה (ללא התנגשות)", type: "scouts" }
+    ]
+  },
+  3: { // רביעי
+    name: "רביעי",
+    dep: "10:00",
+    ret: "21:00",
+    slots: [
+      { id: "w1", time: "08:00 - 10:30", title: "☕ בוקר פנוי", sub: "התחלה מאוחרת בביה״ס", type: "free" },
+      { id: "w2", time: "10:30 - 13:00", title: "פיזיקה D (5 יח״ל)", sub: "מעבדה 2 (3 שיעורים רצופים)", type: "school" },
+      { id: "w3", time: "13:30 - 15:00", title: "🚗 נסיעה לאוניברסיטה", sub: "יציאה מבי״ס ב-13:30 (גובר על תנ״ך)", type: "travel", needs: [["w4"]] },
+      { id: "w4", time: "15:00 - 19:30", title: "🎓 אוניברסיטה (פרונטלי)", sub: "לימודים אקדמיים מלאים", type: "uni" },
+      { id: "w5", time: "19:30 - 21:00", title: "🚗 נסיעה חזרה הביתה", sub: "הגעה הביתה ב-21:00", type: "travel", needs: [["w4"]] }
+    ]
+  },
+  4: { // חמישי
+    name: "חמישי",
+    dep: "06:30",
+    ret: "16:15",
+    slots: [
+      { id: "th1", time: "06:30 - 08:00", title: "🚗 נסיעה מוקדמת לאוניברסיטה", sub: "יציאה ב-06:30", type: "travel", needs: [["th2"]] },
+      { id: "th2", time: "08:00 - 10:00", title: "🎓 אוניברסיטה (פרונטלי)", sub: "שעתיים אקדמיות (גובר על אנגלית וספרות)", type: "uni" },
+      { id: "th3", time: "10:00 - 11:30", title: "🚗 נסיעה מאוניברסיטה לבי״ס", sub: "הגעה ב-11:30 ישירות להיסטוריה", type: "travel", needs: [["th2"], ["th4", "th5", "th6"]] },
+      { id: "th4", time: "11:30 - 13:00", title: "היסטוריה (2 יח״ל)", sub: "גוסקין ברוך | חדר יא 7", type: "school" },
+      { id: "th5", time: "13:25 - 14:10", title: "חינוך גופני", sub: "אינשטט גל", type: "school" },
+      { id: "th6", time: "14:10 - 15:50", title: "אזרחות", sub: "לופו-שפיר קרן • סיום בי״ס ב-15:50!", type: "school" },
+      { id: "th7", time: "15:50 - 21:15", title: "☕ אחה״צ וערב פנוי", sub: "סיום מוקדם של יום הלימודים ב-15:50!", type: "free" }
+    ]
+  }
+};
+
+// True while there are lesson toggles in the edit view that haven't been saved yet
+let hasUnsavedEdits = false;
+
+// Storage state
+let storeData = {
+  currentWeekId: getWeekIdentifier(new Date()),
+  days: {}
+};
+
+// Helper: Calculate ISO Week Identifier to automatically reset every Sunday
+function getWeekIdentifier(d) {
+  const date = new Date(d.getTime());
+  date.setHours(0, 0, 0, 0);
+  // Sunday is first day of week in Israel
+  const sunday = new Date(date);
+  sunday.setDate(date.getDate() - date.getDay());
+  return sunday.toISOString().split('T')[0]; // e.g. "2026-10-11"
+}
+
+// Load from LocalStorage + Cloud
+function initStorage() {
+  const local = localStorage.getItem("uri_mom_schedule_state_v2");
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      const thisWeek = getWeekIdentifier(new Date());
+      // AUTO-RESET IF A NEW WEEK HAS STARTED!
+      if (parsed.currentWeekId === thisWeek) {
+        storeData = parsed;
+      } else {
+        console.log("New week detected! Overrides reset to default.");
+        storeData = { currentWeekId: thisWeek, days: {} };
+        saveToLocalStorage();
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  // Also check URL parameters if shared via link
+  parseUrlState();
+
+  // Try fetching cloud update
+  fetchCloudState();
+}
+
+function saveToLocalStorage() {
+  localStorage.setItem("uri_mom_schedule_state_v2", JSON.stringify(storeData));
+}
+
+// Free, zero-limit, serverless Cloud Sync (works on GitHub Pages, Cloudflare Pages, anywhere!)
+const NTFY_TOPIC = "uri_aviram_schedule_sync_9c1c2e95525d7ca3_v3";
+const NTFY_URL = "https://ntfy.sh/" + NTFY_TOPIC;
+
+function applyIncomingCloudData(cloudData) {
+  const thisWeek = getWeekIdentifier(new Date());
+  if (!cloudData || cloudData.currentWeekId !== thisWeek || hasUnsavedEdits) return;
+  const localTs = storeData.updatedAt || 0;
+  const cloudTs = cloudData.updatedAt || 0;
+  if (cloudTs > localTs) {
+    storeData = cloudData;
+    saveToLocalStorage();
+    renderMomView();
+    renderEditView();
+  }
+  const lbl = document.getElementById("sync-label");
+  if (lbl) lbl.innerText = "מסונכרן לכל המכשירים בזמן אמת ✓";
+}
+
+async function fetchCloudState() {
+  try {
+    const thisWeek = getWeekIdentifier(new Date());
+    const res = await fetch(NTFY_URL + "/json?poll=1&since=all", { cache: "no-store" });
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.trim().split("\n").filter(Boolean);
+      let latestCloud = null;
+      for (const line of lines) {
+        try {
+          const evt = JSON.parse(line);
+          if (evt.event === "message" && evt.message) {
+            const parsed = JSON.parse(evt.message);
+            if (parsed && parsed.currentWeekId === thisWeek) {
+              if (!latestCloud || (parsed.updatedAt || 0) >= (latestCloud.updatedAt || 0)) {
+                latestCloud = parsed;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+      if (latestCloud) {
+        applyIncomingCloudData(latestCloud);
+        // If local state is newer than cloud cache, refresh cloud cache
+        if ((storeData.updatedAt || 0) > (latestCloud.updatedAt || 0)) {
+          pushDayState(selectedDayIdx);
+        }
+      } else if (storeData.days && Object.keys(storeData.days).length > 0) {
+        // Cloud cache expired overnight; re-publish local state to keep cloud warm all week
+        pushDayState(selectedDayIdx);
+      }
+      const lbl = document.getElementById("sync-label");
+      if (lbl) lbl.innerText = "מסונכרן לכל המכשירים ✓";
+    }
+  } catch (e) {
+    console.log("Cloud sync check:", e);
+  }
+}
+
+async function pushDayState(dayIdx) {
+  try {
+    storeData.updatedAt = Date.now();
+    saveToLocalStorage();
+    const res = await fetch(NTFY_URL, {
+      method: "POST",
+      body: JSON.stringify(storeData)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const lbl = document.getElementById("sync-label");
+    if (lbl) lbl.innerText = "נשמר בענן וסונכרן בהצלחה ✓";
+    return true;
+  } catch (e) {
+    console.log("Cloud save failed", e);
+    const lbl = document.getElementById("sync-label");
+    if (lbl) lbl.innerText = "⚠️ נשמר מקומית – בדוק חיבור אינטרנט";
+    return false;
+  }
+}
+
+// Instant real-time push listener (updates Mom's open screen in < 1 second!)
+function startRealtimeStream() {
+  try {
+    const es = new EventSource(NTFY_URL + "/sse");
+    es.onmessage = (e) => {
+      try {
+        const evt = JSON.parse(e.data);
+        if (evt.event === "message" && evt.message) {
+          const parsed = JSON.parse(evt.message);
+          applyIncomingCloudData(parsed);
+        }
+      } catch (_) {}
+    };
+  } catch (e) {
+    console.log("SSE fallback to polling", e);
+  }
+}
+
+startRealtimeStream();
+setInterval(fetchCloudState, 30000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") fetchCloudState();
+});
+
+// Detect day of week (0: Sun ... 4: Thu)
+const now = new Date();
+let currentDayIdx = now.getDay();
+if (currentDayIdx > 4) currentDayIdx = 0; // Default to Sunday on Fri/Sat
+let selectedDayIdx = currentDayIdx;
+
+// URL Query state parsing (for cross-device sharing via WhatsApp link)
+function parseUrlState() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const data = urlParams.get("d");
+  if (data) {
+    try {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(data))));
+      if (decoded.currentWeekId === getWeekIdentifier(new Date())) {
+        if ((decoded.updatedAt || 1) >= (storeData.updatedAt || 0)) {
+          storeData = decoded;
+          saveToLocalStorage();
+        }
+      }
+    } catch(e) {
+      console.error("Failed to parse URL state", e);
+    }
+  }
+}
+
+// Switch View Tab
+function switchTab(tab) {
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active", "parents-active"));
+  document.querySelectorAll(".view-section").forEach(s => s.classList.remove("active"));
+
+  if (tab === "parents") {
+    document.getElementById("btn-tab-parents").classList.add("parents-active");
+    document.getElementById("view-parents").classList.add("active");
+    renderMomView();
+  } else if (tab === "edit") {
+    document.getElementById("btn-tab-edit").classList.add("active");
+    document.getElementById("view-edit").classList.add("active");
+    renderEditView();
+  }
+  window.location.hash = tab;
+}
+
+// Select Day
+function selectDay(dayIdx) {
+  selectedDayIdx = dayIdx;
+  renderMomView();
+  renderEditView();
+}
+
+// Time helpers ("HH:MM" <-> minutes)
+function toMin(t) { const [h, m] = t.split(":").map(Number); return h * 60 + m; }
+function toTime(min) { return String(Math.floor(min / 60)).padStart(2, "0") + ":" + String(min % 60).padStart(2, "0"); }
+function slotRange(slot) { const [a, b] = slot.time.split(" - "); return [toMin(a), toMin(b)]; }
+
+// Minutes needed to get from home to school / from school back home
+const LEAVE_BEFORE_SCHOOL = 30;
+const HOME_AFTER_SCHOOL = 30;
+
+// A travel slot is skipped when the activity it serves was cancelled
+function isTravelSkipped(slot, cancelled) {
+  if (slot.type !== "travel" || !slot.needs) return false;
+  return !slot.needs.every(group => group.some(id => !cancelled.includes(id)));
+}
+
+// Calculate departure/return times from the lessons that actually take place
+function calcDayEdges(base, cancelled) {
+  const isActive = s => s.type !== "free" && !cancelled.includes(s.id) && !isTravelSkipped(s, cancelled);
+  const active = base.slots.filter(isActive);
+  const baseActive = base.slots.filter(s => s.type !== "free");
+  if (active.length === 0) return { dep: "—", ret: "—", noDay: true };
+
+  const first = active[0], last = active[active.length - 1];
+  // Same first/last activity as the regular day -> keep the original times
+  const dep = first.id === baseActive[0].id ? base.dep
+    : toTime(slotRange(first)[0] - (first.type === "travel" ? 0 : LEAVE_BEFORE_SCHOOL));
+  const ret = last.id === baseActive[baseActive.length - 1].id ? base.ret
+    : toTime(slotRange(last)[1] + (last.type === "travel" ? 0 : HOME_AFTER_SCHOOL));
+  return { dep, ret, noDay: false };
+}
+
+function getDefaultSandwiches(dayIdx) {
+  if (dayIdx === 4) {
+    return { count: 2, notes: "2 כריכי בוקר" };
+  }
+  return { count: 3, notes: "2 כריכי בוקר + כריך צהריים" };
+}
+
+function getDayData(dayIdx) {
+  const base = baseSchedule[dayIdx];
+  const override = (storeData.days && storeData.days[dayIdx]) || {};
+  const cancelled = override.cancelled || [];
+  const auto = calcDayEdges(base, cancelled);
+  const defSand = getDefaultSandwiches(dayIdx);
+  return {
+    name: base.name,
+    // depOverride/retOverride are set only when the times were edited by hand
+    dep: override.depOverride || auto.dep,
+    ret: override.retOverride || auto.ret,
+    autoDep: auto.dep,
+    autoRet: auto.ret,
+    noDay: auto.noDay,
+    edgesChanged: auto.dep !== base.dep || auto.ret !== base.ret,
+    sandwiches: override.sandwiches !== undefined ? override.sandwiches : defSand.count,
+    sandNotes: override.sandNotes !== undefined ? override.sandNotes : defSand.notes,
+    cancelled: cancelled,
+    slots: base.slots
+  };
+}
+
+// Render Mom View
+function renderMomView() {
+  const data = getDayData(selectedDayIdx);
+
+  // Update day selector pills
+  document.querySelectorAll("#parents-day-selector .day-pill").forEach((pill, idx) => {
+    pill.classList.toggle("selected", idx === selectedDayIdx);
+    pill.classList.toggle("today-badge", idx === currentDayIdx);
+  });
+
+  document.getElementById("parents-date-str").innerText = `יום ${data.name} • שעות יציאה, חזרה וכריכים`;
+  document.getElementById("parents-sandwich-count").innerText = data.sandwiches;
+  document.getElementById("parents-sandwich-notes").innerText = data.sandNotes;
+  document.getElementById("parents-departure-time").innerText = data.dep;
+  document.getElementById("parents-return-time").innerText = data.ret;
+  const note = document.getElementById("parents-edges-note");
+  if (data.noDay) {
+    note.innerText = "🏠 כל השיעורים בוטלו – נשארים היום בבית";
+  } else if (data.edgesChanged && data.dep === data.autoDep && data.ret === data.autoRet) {
+    note.innerText = "🔄 שעות היציאה והחזרה עודכנו אוטומטית בגלל שיעורים שבוטלו";
+  } else {
+    note.innerText = "";
+  }
+  note.style.display = note.innerText ? "block" : "none";
+
+  // Render timeline
+  const container = document.getElementById("parents-timeline");
+  container.innerHTML = "";
+
+  const typeClassMap = {
+    uni: "badge-uni",
+    travel: "badge-travel",
+    scouts: "badge-scouts",
+    school: "badge-school",
+    free: "badge-school"
+  };
+
+  const typeNameMap = {
+    uni: "🎓 אקדמיה",
+    travel: "🚗 נסיעה",
+    scouts: "⚜️ צופים",
+    school: "🏫 בי״ס",
+    free: "☕ מנוחה"
+  };
+
+  data.slots.forEach(slot => {
+    const isCancelled = data.cancelled.includes(slot.id);
+    const isSkipped = !isCancelled && isTravelSkipped(slot, data.cancelled);
+    const off = isCancelled || isSkipped;
+    const div = document.createElement("div");
+    div.className = `time-slot ${off ? 'is-cancelled' : ''}`;
+    
+    // DIRECT NOTICE ON THE LESSON CARD ITSELF AS REQUESTED!
+    div.innerHTML = `
+      <div class="slot-meta">
+        <span class="slot-time-pill">${slot.time}</span>
+        <div class="slot-title">
+          ${isCancelled ? '<span class="cancelled-stamp">❌ השיעור בוטל להיום!</span>' : ''}
+          ${isSkipped ? '<span class="cancelled-stamp">🚫 הנסיעה לא נדרשת</span>' : ''}
+          ${slot.title}
+        </div>
+        <div class="slot-sub">${isCancelled ? 'שעה זו פנויה' : (isSkipped ? 'השיעור שהנסיעה הייתה אליו בוטל' : slot.sub)}</div>
+      </div>
+      <span class="slot-badge-type ${off ? 'badge-school' : (typeClassMap[slot.type] || 'badge-school')}">
+        ${isCancelled ? '❌ בוטל' : (isSkipped ? '🚫 לא נדרש' : (typeNameMap[slot.type] || 'בי״ס'))}
+      </span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Render Edit View
+function renderEditView() {
+  const data = getDayData(selectedDayIdx);
+
+  // Update day selector pills
+  document.querySelectorAll("#edit-day-selector .day-pill").forEach((pill, idx) => {
+    pill.classList.toggle("selected", idx === selectedDayIdx);
+    pill.classList.toggle("today-badge", idx === currentDayIdx);
+  });
+
+  document.getElementById("edit-sandwich-count").innerText = data.sandwiches;
+  document.getElementById("edit-sandwich-notes").value = data.sandNotes;
+  document.getElementById("edit-dep-time").value = data.dep;
+  document.getElementById("edit-ret-time").value = data.ret;
+
+  // Render slots for cancellation toggle
+  const container = document.getElementById("edit-slots-list");
+  container.innerHTML = "";
+
+  data.slots.forEach(slot => {
+    const isCancelled = data.cancelled.includes(slot.id);
+    const div = document.createElement("div");
+    div.className = "edit-slot-item";
+    div.innerHTML = `
+      <div>
+        <span style="font-size:11px; font-weight:800; color:#475569; background:#e2e8f0; padding:1px 6px; border-radius:4px; direction:ltr; display:inline-block;">${slot.time}</span>
+        <div style="font-weight:800; font-size:13px; color:${isCancelled || isTravelSkipped(slot, data.cancelled) ? '#94a3b8; text-decoration:line-through;' : '#0f172a;'}">${slot.title}</div>
+        ${!isCancelled && isTravelSkipped(slot, data.cancelled) ? '<div style="font-size:11px; color:#b91c1c; font-weight:700;">🚫 הנסיעה לא נדרשת – השיעור בוטל</div>' : ''}
+      </div>
+      <button class="btn-toggle-cancel ${isCancelled ? 'cancelled-state' : ''}" onclick="toggleSlotCancel('${slot.id}')">
+        ${isCancelled ? '✓ החזר שיעור' : '✕ סמן כשיעור שבוטל'}
+      </button>
+    `;
+    container.appendChild(div);
+  });
+
+  updateWhatsAppLink();
+}
+
+function changeSandwich(delta) {
+  let val = parseInt(document.getElementById("edit-sandwich-count").innerText) + delta;
+  if (val < 0) val = 0;
+  if (val > 10) val = 10;
+  document.getElementById("edit-sandwich-count").innerText = val;
+}
+
+function toggleSlotCancel(slotId) {
+  if (!storeData.days) storeData.days = {};
+  if (!storeData.days[selectedDayIdx]) storeData.days[selectedDayIdx] = {};
+  if (!storeData.days[selectedDayIdx].cancelled) storeData.days[selectedDayIdx].cancelled = [];
+
+  const list = storeData.days[selectedDayIdx].cancelled;
+  const idx = list.indexOf(slotId);
+  if (idx > -1) {
+    list.splice(idx, 1);
+  } else {
+    list.push(slotId);
+  }
+  // Day edges are recalculated from the remaining lessons
+  delete storeData.days[selectedDayIdx].depOverride;
+  delete storeData.days[selectedDayIdx].retOverride;
+  hasUnsavedEdits = true;
+  renderEditView();
+}
+
+function saveDayChanges() {
+  if (!storeData.days) storeData.days = {};
+  if (!storeData.days[selectedDayIdx]) storeData.days[selectedDayIdx] = {};
+
+  storeData.days[selectedDayIdx].sandwiches = parseInt(document.getElementById("edit-sandwich-count").innerText);
+  storeData.days[selectedDayIdx].sandNotes = document.getElementById("edit-sandwich-notes").value;
+  // Keep times as a manual override only if they differ from the automatic calculation
+  const day = storeData.days[selectedDayIdx];
+  const auto = getDayData(selectedDayIdx);
+  const depVal = document.getElementById("edit-dep-time").value.trim();
+  const retVal = document.getElementById("edit-ret-time").value.trim();
+  delete day.dep;
+  delete day.ret;
+  if (depVal && depVal !== auto.autoDep) day.depOverride = depVal; else delete day.depOverride;
+  if (retVal && retVal !== auto.autoRet) day.retOverride = retVal; else delete day.retOverride;
+
+  hasUnsavedEdits = false;
+  saveToLocalStorage();
+  updateWhatsAppLink();
+  renderMomView();
+  pushDayState(selectedDayIdx).then(ok => {
+    showToast(ok ? "נשמר וסונכרן לטלפון של ההורים!" : "⚠️ לא נשמר בענן – בדוק חיבור לאינטרנט");
+  });
+}
+
+function resetToDefault() {
+  if (!storeData.days) storeData.days = {};
+  delete storeData.days[selectedDayIdx];
+  storeData.updatedAt = Date.now();
+  hasUnsavedEdits = false;
+  saveToLocalStorage();
+  pushDayState(selectedDayIdx);
+  renderEditView();
+  renderMomView();
+  showToast("היום אופס למערכת המקורית!");
+}
+
+function updateWhatsAppLink() {
+  const data = getDayData(selectedDayIdx);
+  
+  // Encode state for URL sharing
+  const encodedState = btoa(unescape(encodeURIComponent(JSON.stringify(storeData))));
+  const cleanPath = window.location.pathname.replace(/\/editday(\/index\.html)?\/?$/, "/parents/");
+  const shareUrl = window.location.origin + cleanPath + "?d=" + encodedState + "#parents";
+
+  const msg = `היי להורים ❤️
+עדכנתי את המערכת ליום ${data.name}:
+🥪 כריכים: ${data.sandwiches} (${data.sandNotes})
+⏰ יציאה מהבית: ${data.dep}
+🏠 חזרה צפויה: ${data.ret}
+${data.cancelled.length > 0 ? "⚠️ יש שיעורים שבוטלו היום (מסומנים במערכת)" : ""}
+
+לצפייה בלוח השעות המעודכן בזמן אמת:
+${shareUrl}`;
+
+  const btn = document.getElementById("btn-share-whatsapp");
+  btn.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast-msg");
+  t.innerText = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// Initialize on page load
+initStorage();
+
+// Handle initial route
+if (window.location.hash === "#parents") {
+  switchTab("parents");
+} else if (window.location.hash === "#edit" || window.location.pathname.includes("/editday")) {
+  switchTab("edit");
+} else {
+  switchTab("parents");
+}
+</script>
+
+</body>
+</html>
